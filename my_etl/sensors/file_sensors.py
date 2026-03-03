@@ -1,9 +1,9 @@
 import os
-from dagster import sensor, RunRequest, AssetSelection, SensorDefinition
+from dagster import sensor, RunRequest
 
 @sensor(
     name="sensor_actualizacion_json",
-    minimum_interval_seconds=300, # Revisa cada 5 minutos
+    minimum_interval_seconds=60, # Revisa cada 1 minuto
 )
 def cablemodem_json_sensor(context):
     file_path = "data/raw/cablemodems/cablemodems.json"
@@ -21,5 +21,5 @@ def cablemodem_json_sensor(context):
                 run_key=f"json_updated_{mtime}",
                 message="Se detectó una nueva versión del archivo de cablemódems.",
                 # Ejecuta todo el flujo
-                asset_selection=AssetSelection.all()
+                asset_selection=["stg_clientes", "stg_cablemodems", "reporte_final"]
             )
