@@ -1,9 +1,13 @@
 import os
-from dagster import sensor, RunRequest
+from dagster import sensor, RunRequest, AssetKey, AssetSelection
+
+#from my_etl.assets.staging_assets import stg_cablemodems, stg_clientes
+#from my_etl.assets.business_assets import reporte_final
 
 @sensor(
     name="sensor_actualizacion_json",
     minimum_interval_seconds=60, # Revisa cada 1 minuto
+    target=AssetSelection.all()
 )
 def cablemodem_json_sensor(context):
     file_path = "data/raw/cablemodems/cablemodems.json"
@@ -21,5 +25,9 @@ def cablemodem_json_sensor(context):
                 run_key=f"json_updated_{mtime}",
                 message="Se detectó una nueva versión del archivo de cablemódems.",
                 # Ejecuta todo el flujo
-                asset_selection=["stg_clientes", "stg_cablemodems", "reporte_final"]
+                asset_selection=[
+                    AssetKey("stg_cablemodems"),
+                    AssetKey("stg_clientes"),
+                    AssetKey("reporte_final")
+                ]
             )
