@@ -10,23 +10,33 @@ from datetime import datetime
     }
 )
 def reporte_final(clientes, modems):
-    """Genera el reporte final con lógica de estado_cm."""
-    # Join 1:N
+    """Genera el reporte final: (nombre_completo, mac, nodo, power, delay, estado_cm)"""
+    
+    # Join (N modems : 1 cliente)
     df = pd.merge(modems, clientes, on="id_cliente", how="inner")
 
-    # Lógica de enumerado estado_cm
-    def definir_estado(row):
-        return "Correcto" if row['power'] > 0 and row['delay'] < 4 else "Incorrecto"
+    # Lógica del enumerado estado_cm
+    # Correcto: power > 0 y delay < 4 | Incorrecto: Caso contrario
+    def calcular_estado_cm(row):
+        if row['power'] > 0 and row['delay'] < 4:
+            return "Correcto"
+        return "Incorrecto"
 
-    df['estado_cm'] = df.apply(definir_estado, axis=1)
+    df['estado_cm'] = df.apply(calcular_estado_cm, axis=1)
 
-    # Selección de columnas requeridas
-    reporte = df[['nombre_completo', 'mac', 'nodo', 'power', 'delay', 'estado_cm']]
+    # Selección de columnas finales según formato pedido
+    reporte = df[[
+        'nombre_completo',
+        'mac',
+        'nodo',
+        'power',
+        'delay',
+        'estado_cm'
+    ]]
 
-    # Persistencia para reconstrucción (Datalake Warehouse)
-    # Guardamos con fecha para el histórico y uno fijo para el reporte actual
-    fecha_str = datetime.now().strftime("%Y%m%d_%H%M")
-    reporte.to_csv(f"data/business/reporte_{fecha_str}.csv", index=False)
+    # Persistencia en Datawarehouse local
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    reporte.to_csv(f"data/business/reporte_{timestamp}.csv", index=False)
     reporte.to_csv("data/business/reporte_actual.csv", index=False)
     
     return reporte
