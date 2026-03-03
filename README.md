@@ -3,12 +3,30 @@
 Este proyecto implementa un data pipeline usando Dagster para dos fines, como orquestador y catálogo de datos. El proceso ETL ingesta datos en bruto en dos archivos de datos que se actualizan con cierta frecuencia.
 El proceso de transformación se realiza a través de una capa de staging, donde se limpian y transforman los datos, y luego se produce un reporte final con el análisis del estado de los cablemodems.
 
-## Arquitectura
+## Lógica de Negocio
 
-### Flujo de Datos
+### Reglas de Estado de Cablemodems
+El sistema evalúa la salud de los cablemodems basado en:
+- **Power Level**: Debe ser mayor que 0
+- **Delay**: Debe ser menor que 4 milisegundos
+
+Los Modems que cumplen con ambos requisitos son clasificados como "Correcto", en otro caso será "Incorrecto".
+
+### Calidad de Datos
+- En el reporte se incluyen sólo clientes activos
+- Sólo se procesan cablemodems en estado `On`
+- La medición de potencia se redondea a 3 decimales
+- Todos los reportes son marcados con timestamp para posible auditoría
+
+## Arquitectura
+![Arquitectura](<img/Arquitectura ETL.drawio.png>)
+
+## Data Pipeline
 ```
 Datos en Bruto (Raw) → Capa Staging → Capa Business (BI)
 ```
+
+![DAG](img/DAG.png)
 
 1. **Capa Raw** (`data/raw/`)
    - `clientes/clientes.csv` - Información de Clientes
@@ -21,9 +39,9 @@ Datos en Bruto (Raw) → Capa Staging → Capa Business (BI)
 3. **Business Layer** (`data/business/`)
    - `reporte_final` - Reporte Final con análisis de estado de cable modems
 
-## Data Pipeline
-
 ### Assets de Staging
+
+![Assets](img/Assets.png)
 
 #### stg_clientes
 - Carga datos de clientes desde CSV
@@ -59,20 +77,41 @@ Datos en Bruto (Raw) → Capa Staging → Capa Business (BI)
 - `delay` - Delay
 - `estado_cm` - Estado del modem (Correcto/Incorrecto)
 
+![Reporte Actual](img/reporte_actual.png)
+
 ## Automatización
+
+![Automation](img/automation.png)
+
+## Features
+- ✅ Ingestión de datos automática
+- ✅ Transformación de datos multicapa
+- ✅ Disparo por autodetección de cambios en los archivos raw
+- ✅ Versionado de reporte histórico
+- ✅ Arquitectura de datos basado en assets
 
 ### Sensor de Archivos Raw
 El sensor `cablemodem_json_sensor` monitorea cambios en el archivo JSON de cablemodems:
+
+![Sensor Tick](img/sensor_tick.png)
+
 - Verifica cada 60 segundos
 - Detecta modificaciones de archivo usando el timestamp
 - Autimáticamente dispara el pipeline completo cuando el cambio es detectado
 - Ejecuta: `stg_cablemodems` → `stg_clientes` → `reporte_final`
+
+![Log Autorun](img/log_autorun.png)
 
 ## Instalación
 
 ### Prerequisitos
 - Python 3.8+
 - pip
+
+### Dependencias
+- **pandas** - Manipulación de datos y análisis
+- **dagster** - Orquestación
+- **dagster-webserver** - Web UI para monitoreo
 
 ### Setup
 ```bash
@@ -92,3 +131,11 @@ dagster dev -f my_etl/definitions.py
 ### Acceso a la UI
 Para acceder a la UI desde un navegador ir a: http://localhost:3000
 
+![Autorun](img/autorun.png)
+
+## Mejoras Futuras
+- Agregar chequeos de validación de datos
+- Implementar manejo de errores y alertas
+- Agregar soporte para multiples fuentes de datos
+- Crear Dashboards analíticos
+- Implementar porcesamiento incremental para grandes datasets
