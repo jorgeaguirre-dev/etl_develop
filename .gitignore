@@ -1,0 +1,11 @@
+draft/
+
+__pycache__/
+*.pyc
+data/**
+!data/.gitkeep
+.dagster/
+venv/
+.env
+
+.dagster_home/
