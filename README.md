@@ -7,16 +7,16 @@ El proceso de transformación se realiza a través de una capa de staging, donde
 
 ### Reglas de Estado de Cablemodems
 El sistema evalúa la salud de los cablemodems basado en:
-- **Power Level**: Debe ser mayor que 0
-- **Delay**: Debe ser menor que 4 milisegundos
+- **Power Level**: Debe ser `mayor que 0`
+- **Delay**: Debe ser menor que `4 milisegundos`
 
-Los Modems que cumplen con ambos requisitos son clasificados como "Correcto", en otro caso será "Incorrecto".
+Los Modems que cumplen con ambos requisitos son clasificados como **"Correcto"**, en otro caso será **"Incorrecto"**.
 
 ### Calidad de Datos
 - En el reporte se incluyen sólo clientes activos
 - Sólo se procesan cablemodems en estado `On`
-- La medición de potencia se redondea a 3 decimales
-- Todos los reportes son marcados con timestamp para posible auditoría
+- La medición de potencia se redondea a `3 decimales`
+- Todos los reportes son marcados con `timestamp` para posible auditoría
 
 ## Arquitectura
 ![Arquitectura](<img/Arquitectura ETL.drawio.png>)
