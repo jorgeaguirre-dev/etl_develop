@@ -101,10 +101,11 @@ La automatización del pipeline se basa en el uso del Sensor de cambios en los a
 
 ### Sensor de Archivos Raw
 Se aprecian los ticks donde se produce el monitoreo (chequeo) de la situación de los archivos en etapa Raw.
+El sensor `cablemodem_json_sensor` monitorea cambios en el archivo JSON de cablemodems.
 
 ![Sensor Tick](img/sensor_tick.png)
 
-El sensor `cablemodem_json_sensor` monitorea cambios en el archivo JSON de cablemodems.
+Debajo se observa el stream de logs generados al detectar cambios en el archivo `.json` generado como parte de las pruebas de funcionamiento.
 
 ![Log Autorun](img/log_autorun.png)
 
