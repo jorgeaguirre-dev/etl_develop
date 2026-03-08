@@ -132,7 +132,7 @@ export DAGSTER_HOME=$(pwd)/.dagster_home
 ## Inicio y Consulta de Dagster
 
 ```bash
-export DAGSTER_HOME=/home/repo/Challenges/4_desarrollo_etl/.dagster_home
+export DAGSTER_HOME=$(pwd)/.dagster_home
 dagster dev -f my_etl/definitions.py
 ```
 ### Acceso a la UI
