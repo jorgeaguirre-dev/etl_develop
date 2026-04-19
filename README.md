@@ -1,148 +1,148 @@
-# 4 - Desarrollo ETL
+# ETL Development
 
-Este proyecto implementa un data pipeline usando Dagster para dos fines, como orquestador y catálogo de datos. El proceso ETL ingesta datos en bruto en dos archivos de datos que se actualizan con cierta frecuencia.
-El proceso de transformación se realiza a través de una capa de staging, donde se limpian y transforman los datos, y luego se produce un reporte final con el análisis del estado de los cablemodems.
+This project implements a data pipeline using Dagster for two purposes: as an orchestrator and as a data catalog. The ETL process ingests raw data from two data files that are updated with some frequency.
+The transformation process is carried out through a staging layer, where data is cleaned and transformed, and then a final report is produced with the analysis of the cablemodem status.
 
-## Características principales
-- ✅ Ingestión de datos automática
-- ✅ Transformación de datos multicapa
-- ✅ Disparo por autodetección de cambios en los archivos raw
-- ✅ Versionado de reporte histórico
-- ✅ Arquitectura de datos basado en assets
+## Main Features
+- ✅ Automatic data ingestion
+- ✅ Multi-layer data transformation
+- ✅ Triggered by auto-detection of changes in raw files
+- ✅ Historical report versioning
+- ✅ Asset-based data architecture
 
-## Lógica de Negocio
+## Business Logic
 
-### Reglas de Estado de Cablemodems
-El sistema evalúa la salud de los cablemodems basado en:
-- **Power Level**: Debe ser `mayor que 0`
-- **Delay**: Debe ser menor que `4 milisegundos`
+### Cablemodem Status Rules
+The system evaluates the health of cablemodems based on:
+- **Power Level**: Must be `greater than 0`
+- **Delay**: Must be less than `4 milliseconds`
 
-Los Modems que cumplen con ambos requisitos son clasificados como **"Correcto"**, en otro caso será **"Incorrecto"**.
+Modems that meet both requirements are classified as **"Correcto"**, otherwise they will be **"Incorrecto"**.
 
-### Calidad de Datos
-- En el reporte se incluyen sólo clientes activos
-- Sólo se procesan cablemodems en estado `On`
-- La medición de potencia se redondea a `3 decimales`
-- Todos los reportes son marcados con `timestamp` para posible auditoría
+### Data Quality
+- Only active clients are included in the report
+- Only cablemodems in `On` state are processed
+- Power measurement is rounded to `3 decimal places`
+- All reports are marked with a `timestamp` for possible auditing
 
-## Arquitectura
-![Arquitectura](<img/Arquitectura ETL.drawio.png>)
+## Architecture
+![Architecture](<img/Arquitectura ETL.drawio.png>)
 
 ## Data Pipeline
 ```
-Datos en Bruto (Raw) → Capa Staging → Capa Business (BI)
+Raw Data → Staging Layer → Business Layer (BI)
 ```
-Se observan los Assets materializados y dando forma al Pipeline.
+The materialized Assets are observed shaping the Pipeline.
 
 ![DAG](img/DAG.png)
 
-1. **Capa Raw** (`data/raw/`)
-   - `clientes/clientes.csv` - Información de Clientes
-   - `cablemodems/cablemodems.json` - Datos de telemetría de Cable modems
+1. **Raw Layer** (`data/raw/`)
+   - `clientes/clientes.csv` - Client information
+   - `cablemodems/cablemodems.json` - Cablemodem telemetry data
 
-2. **Capa Staging** (`data/staging/`)
-   - `stg_clientes` - Clientes activos filtrados con su nombre
-   - `stg_cablemodems` - Datos de cable modem filtrado y aplanado
+2. **Staging Layer** (`data/staging/`)
+   - `stg_clientes` - Filtered active clients with their name
+   - `stg_cablemodems` - Filtered and flattened cablemodem data
 
 3. **Business Layer** (`data/business/`)
-   - `reporte_final` - Reporte Final con análisis de estado de cable modems
+   - `reporte_final` - Final report with cablemodem status analysis
 
-### Assets de Staging
-Se observa la materialización exitosa de los assets cada vez que sucede.
+### Staging Assets
+The successful materialization of the assets is observed each time it occurs.
 ![Assets](img/Assets.png)
 
-Aquí se menciona en detalle que sucede en cada parte del pipeline y en que etapa del procesamiento ocurre.
+Here is a detailed description of what happens in each part of the pipeline and at which processing stage it occurs.
 
 #### stg_clientes
-- Carga datos de clientes desde CSV
-- Filtra sólo clientes activos (`estado == True`)
-- Se crea el campo `nombre_completo` (Nombre + Apellido)
-- Devuelve: `id_cliente`, `nombre_completo`
+- Loads client data from CSV
+- Filters only active clients (`estado == True`)
+- Creates the `nombre_completo` field (First name + Last name)
+- Returns: `id_cliente`, `nombre_completo`
 
 #### stg_cablemodems
-- Carga datos de cable modems desde JSON
-- Aplana la estructura JSON
-- Hereda `nodo` e `id_cliente` del nivel superior
-- Redondea `power` a 3 decimales
-- Filtra sólo modems encendidos (`encendido == True`)
-- Devuelve: `id_cliente`, `mac`, `nodo`, `power`, `delay`
+- Loads cablemodem data from JSON
+- Flattens the JSON structure
+- Inherits `nodo` and `id_cliente` from the top level
+- Rounds `power` to 3 decimal places
+- Filters only powered-on modems (`encendido == True`)
+- Returns: `id_cliente`, `mac`, `nodo`, `power`, `delay`
 
-### Assets de Business
-Aquí se genera el reporte final.
+### Business Assets
+The final report is generated here.
 #### reporte_final
-- Se realiza un join entre clientes y cablemodems (1:N)
-- Calcula `estado_cm` (estado de cable modem):
-  - **Correcto**: `power > 0` y `delay < 4`
-  - **Incorrecto**: Otro caso
-- Genera reporte con timestamp
+- Performs a join between clients and cablemodems (1:N)
+- Calculates `estado_cm` (cablemodem status):
+  - **Correcto**: `power > 0` and `delay < 4`
+  - **Incorrecto**: Any other case
+- Generates report with timestamp
 - Outputs:
-  - `reporte_{timestamp}.csv` - Snapshot histórica
-  - `reporte_actual.csv` - ültima versión
+  - `reporte_{timestamp}.csv` - Historical snapshot
+  - `reporte_actual.csv` - Latest version
 
-**Columnas del Reporte:**
-- `nombre_completo` - Nombre completo del cliente
-- `mac` - MAC address del Cablemodem
-- `nodo` - Nodo de Red
-- `power` - Nivel de potencia de señal
+**Report Columns:**
+- `nombre_completo` - Client full name
+- `mac` - Cablemodem MAC address
+- `nodo` - Network node
+- `power` - Signal power level
 - `delay` - Delay
-- `estado_cm` - Estado del modem (Correcto/Incorrecto)
+- `estado_cm` - Modem status (Correcto/Incorrecto)
 
-![Reporte Actual](img/reporte_actual.png)
+![Current Report](img/reporte_actual.png)
 
-## Automatización
-La automatización del pipeline se basa en el uso del Sensor de cambios en los archivos de datos de la etapa Raw. Este sensor monitorea cada minuto si hay algún cambio y dispara las actualizaciones y recalculo en base a los nuevos datos. El proceso genera también un nuevo versionado del reporte para histórico.
+## Automation
+Pipeline automation is based on the use of a sensor that monitors changes in the raw data files. This sensor checks every minute for any changes and triggers updates and recalculation based on the new data. The process also generates a new versioned report for historical tracking.
 
-- Verifica cada 60 segundos
-- Detecta modificaciones de archivo usando el timestamp
-- Autimáticamente dispara el pipeline completo cuando el cambio es detectado
-- Ejecuta: `stg_cablemodems` → `stg_clientes` → `reporte_final`
+- Checks every 60 seconds
+- Detects file modifications using the timestamp
+- Automatically triggers the full pipeline when a change is detected
+- Runs: `stg_cablemodems` → `stg_clientes` → `reporte_final`
 
 ![Automation](img/automation.png)
 
-### Sensor de Archivos Raw
-Se aprecian los ticks donde se produce el monitoreo (chequeo) de la situación de los archivos en etapa Raw.
-El sensor `cablemodem_json_sensor` monitorea cambios en el archivo JSON de cablemodems.
+### Raw Files Sensor
+The ticks where the monitoring (check) of the raw stage files occurs are visible.
+The `cablemodem_json_sensor` sensor monitors changes in the cablemodem JSON file.
 
 ![Sensor Tick](img/sensor_tick.png)
 
-Debajo se observa el stream de logs generados al detectar cambios en el archivo `.json` generado como parte de las pruebas de funcionamiento.
+Below, the log stream generated when changes are detected in the `.json` file is shown, produced as part of the functional testing.
 
 ![Log Autorun](img/log_autorun.png)
 
-## Instalación
+## Installation
 
-### Prerequisitos
+### Prerequisites
 - Python 3.8+
 - pip
 
-### Dependencias
-- **pandas** - Manipulación de datos y análisis
-- **dagster** - Orquestación
-- **dagster-webserver** - Web UI para monitoreo
+### Dependencies
+- **pandas** - Data manipulation and analysis
+- **dagster** - Orchestration
+- **dagster-webserver** - Web UI for monitoring
 
 ### Setup
 ```bash
-# Instalar dependencias
+# Install dependencies
 pip install -r requirements.txt
 
-# Setear el Home de Dagster
+# Set Dagster Home
 export DAGSTER_HOME=$(pwd)/.dagster_home
 ```
 
-## Inicio y Consulta de Dagster
+## Starting and Accessing Dagster
 
 ```bash
 export DAGSTER_HOME=$(pwd)/.dagster_home
 dagster dev -f my_etl/definitions.py
 ```
-### Acceso a la UI
-Para acceder a la UI desde un navegador ir a: http://localhost:3000
+### UI Access
+To access the UI from a browser go to: http://localhost:3000
 
 ![Autorun](img/autorun.png)
 
-## Mejoras Futuras
-- [ ] Agregar chequeos de validación de datos
-- [ ] Implementar manejo de errores y alertas
-- [ ] Agregar soporte para multiples fuentes de datos
-- [ ] Crear Dashboards analíticos
-- [ ] Implementar porcesamiento incremental para grandes datasets
+## Future Improvements
+- [ ] Add data validation checks
+- [ ] Implement error handling and alerts
+- [ ] Add support for multiple data sources
+- [ ] Create analytical dashboards
+- [ ] Implement incremental processing for large datasets
