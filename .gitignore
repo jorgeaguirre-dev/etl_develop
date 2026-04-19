@@ -15,3 +15,6 @@ cablemodems.json
 clientes.csv
 
 readme1.md
+
+mlruns/*
+mlflow.db
