@@ -6,7 +6,7 @@ from dagster import sensor, RunRequest, AssetKey, AssetSelection
 
 @sensor(
     name="sensor_actualizacion_json",
-    minimum_interval_seconds=60, # Revisa cada 1 minuto
+    minimum_interval_seconds=60, # Checks every 1 minute
     target=AssetSelection.all()
 )
 def cablemodem_json_sensor(context):
@@ -14,17 +14,17 @@ def cablemodem_json_sensor(context):
     
     if os.path.exists(file_path):
         mtime = os.path.getmtime(file_path)
-        # Recuperamos el último tiempo procesadoo del cursor
+        # Retrieve the last processed timestamp from the cursor
         last_mtime = context.cursor
         
-        # Si es la primera vez o si el archivo es más nuevo que el anterior
+        # If it's the first run or the file is newer than the previous one
         if last_mtime is None or float(mtime) > float(last_mtime):
-            # Guardamos el nuevo timestamp
+            # Save the new timestamp
             context.update_cursor(str(mtime))
             yield RunRequest(
                 run_key=f"json_updated_{mtime}",
-                message="Se detectó una nueva versión del archivo de cablemódems.",
-                # Ejecuta todo el flujo
+                message="A new version of the cablemodem file was detected.",
+                # Run the full pipeline
                 asset_selection=[
                     AssetKey("stg_cablemodems"),
                     AssetKey("stg_clientes"),

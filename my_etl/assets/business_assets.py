@@ -10,13 +10,13 @@ from datetime import datetime
     }
 )
 def reporte_final(clientes, modems):
-    """Genera el reporte final: (nombre_completo, mac, nodo, power, delay, estado_cm)"""
+    """Generates the final report: (nombre_completo, mac, nodo, power, delay, estado_cm)"""
     
-    # Join (N modems : 1 cliente)
+    # Join (N modems : 1 client)
     df = pd.merge(modems, clientes, on="id_cliente", how="inner")
 
-    # Lógica del enumerado estado_cm
-    # Correcto: power > 0 y delay < 4 | Incorrecto: Caso contrario
+    # estado_cm logic
+    # Correcto: power > 0 and delay < 4 | Incorrecto: any other case
     def calcular_estado_cm(row):
         if row['power'] > 0 and row['delay'] < 4:
             return "Correcto"
@@ -24,7 +24,7 @@ def reporte_final(clientes, modems):
 
     df['estado_cm'] = df.apply(calcular_estado_cm, axis=1)
 
-    # Selección de columnas finales según formato necesario para el reporte
+    # Select final columns in the required report format
     reporte = df[[
         'nombre_completo',
         'mac',
@@ -34,7 +34,7 @@ def reporte_final(clientes, modems):
         'estado_cm'
     ]]
 
-    # Persistencia en Datawarehouse local
+    # Persist to local data warehouse
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     reporte.to_csv(f"data/business/reporte_{timestamp}.csv", index=False)
     reporte.to_csv("data/business/reporte_actual.csv", index=False)

@@ -4,39 +4,39 @@ from dagster import asset
 
 @asset(group_name="staging")
 def stg_clientes():
-    """Carga clientes, filtra activos y genera nombre_completo."""
+    """Loads clients, filters active ones and generates nombre_completo."""
     df = pd.read_csv("data/raw/clientes/clientes.csv")
-    # Filtramos por el campo 'estado' (True)
+    # Filter by the 'estado' field (True)
     df = df[df['estado'] == True].copy()
     
-    # Creamos nombre_completo según el formato necesario
+    # Create nombre_completo in the required format
     df['nombre_completo'] = df['nombre'] + " " + df['apellido']
     
-    # Aseguramos tipo de dato para el join
+    # Ensure correct data type for the join
     df['id_cliente'] = df['id_cliente'].astype(int)
     
     return df[['id_cliente', 'nombre_completo']]
 
 @asset(group_name="staging")
 def stg_cablemodems():
-    """Aplanado del JSON, hereda 'nodo' y filtra por 'encendido'."""
+    """Flattens the JSON, inherits 'nodo' and filters by 'encendido'."""
     with open("data/raw/cablemodems/cablemodems.json", "r") as f:
         data = json.load(f)
     
-    # 'nodo' y 'id_cliente' están en la raíz del objeto en tu JSON
+    # 'nodo' and 'id_cliente' are at the root level of the JSON object
     df = pd.json_normalize(
         data,
         record_path=['cablemodems'],
         meta=['id_cliente', 'nodo']
     )
     
-    # Requerimiento: Redondear power a 3 decimales
+    # Requirement: Round power to 3 decimal places
     df['power'] = df['power'].astype(float).round(3)
     
-    # Filtro: Solo cablemodems encendidos
+    # Filter: Only powered-on cablemodems
     df = df[df['encendido'] == True].copy()
     
-    # Aseguramos tipo de dato para el join
+    # Ensure correct data type for the join
     df['id_cliente'] = df['id_cliente'].astype(int)
     
     return df
